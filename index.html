@@ -132,6 +132,11 @@
             min-width: 200px;
         }
 
+        .filter-section input[type="text"] {
+            flex: 1;
+            min-width: 250px;
+        }
+
         .note-card {
             background: #f8f9fa;
             border-left: 4px solid #667eea;
@@ -193,6 +198,35 @@
 
         .delete-btn:hover {
             box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+        }
+
+        .edit-btn {
+            background: #3498db;
+            padding: 6px 12px;
+            font-size: 12px;
+            margin-top: 10px;
+            margin-right: 8px;
+        }
+
+        .edit-btn:hover {
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+        }
+
+        .note-url {
+            display: block;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 13px;
+            margin-top: 8px;
+            word-break: break-all;
+        }
+
+        .note-url:hover {
+            text-decoration: underline;
+        }
+
+        .note-url::before {
+            content: "🔗 ";
         }
 
         .empty-state {
@@ -315,15 +349,25 @@
                 </div>
 
                 <div class="form-group">
+                    <label for="url">Source URL (optional)</label>
+                    <input type="url" id="url" placeholder="https://example.com/source">
+                </div>
+
+                <div class="form-group">
                     <label for="content">Notes</label>
                     <textarea id="content" placeholder="What did you learn?"></textarea>
                 </div>
 
-                <button onclick="addNote()">Add Note</button>
+                <input type="hidden" id="editingNoteId" value="">
+                <div class="button-group">
+                    <button id="saveNoteBtn" onclick="saveNote()">Add Note</button>
+                    <button id="cancelEditBtn" class="secondary-btn hidden" onclick="cancelEdit()">Cancel</button>
+                </div>
             </div>
 
             <div class="notes-section">
                 <div class="filter-section">
+                    <input type="text" id="searchInput" placeholder="🔍 Search notes..." oninput="filterNotes()">
                     <select id="filterCategory" onchange="filterNotes()">
                         <option value="all">All Categories</option>
                         <option value="Company Overview">Company Overview</option>
@@ -464,39 +508,89 @@
             }
         }
 
-        async function addNote() {
+        async function saveNote() {
             const category = document.getElementById('category').value;
             const title = document.getElementById('title').value.trim();
             const content = document.getElementById('content').value.trim();
+            const url = document.getElementById('url').value.trim();
+            const editingNoteId = document.getElementById('editingNoteId').value;
 
             if (!title || !content) {
                 alert('Please fill in both title and notes');
                 return;
             }
 
-            const { data, error } = await supabase
-                .from('notes')
-                .insert([
-                    {
+            if (editingNoteId) {
+                // Update existing note
+                const { error } = await supabase
+                    .from('notes')
+                    .update({
                         category,
                         title,
                         content,
-                        user_id: currentUser.id
-                    }
-                ])
-                .select();
+                        url: url || null
+                    })
+                    .eq('id', editingNoteId);
 
-            if (error) {
-                console.error('Error adding note:', error);
-                alert('Failed to add note');
+                if (error) {
+                    console.error('Error updating note:', error);
+                    alert('Failed to update note');
+                    return;
+                }
             } else {
-                // Clear inputs
-                document.getElementById('title').value = '';
-                document.getElementById('content').value = '';
+                // Add new note
+                const { error } = await supabase
+                    .from('notes')
+                    .insert([
+                        {
+                            category,
+                            title,
+                            content,
+                            url: url || null,
+                            user_id: currentUser.id
+                        }
+                    ]);
 
-                // Reload notes
-                await loadNotes();
+                if (error) {
+                    console.error('Error adding note:', error);
+                    alert('Failed to add note');
+                    return;
+                }
             }
+
+            // Clear form and reload
+            clearForm();
+            await loadNotes();
+        }
+
+        function clearForm() {
+            document.getElementById('category').value = 'Company Overview';
+            document.getElementById('title').value = '';
+            document.getElementById('url').value = '';
+            document.getElementById('content').value = '';
+            document.getElementById('editingNoteId').value = '';
+            document.getElementById('saveNoteBtn').textContent = 'Add Note';
+            document.getElementById('cancelEditBtn').classList.add('hidden');
+        }
+
+        function editNote(note) {
+            // Populate form with note data
+            document.getElementById('category').value = note.category;
+            document.getElementById('title').value = note.title;
+            document.getElementById('url').value = note.url || '';
+            document.getElementById('content').value = note.content;
+            document.getElementById('editingNoteId').value = note.id;
+
+            // Update button text
+            document.getElementById('saveNoteBtn').textContent = 'Update Note';
+            document.getElementById('cancelEditBtn').classList.remove('hidden');
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cancelEdit() {
+            clearForm();
         }
 
         async function deleteNote(id) {
@@ -521,19 +615,39 @@
 
         function renderNotes() {
             const filterCategory = document.getElementById('filterCategory').value;
-            const filteredNotes = filterCategory === 'all'
-                ? notes
-                : notes.filter(note => note.category === filterCategory);
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+
+            let filteredNotes = notes;
+
+            // Filter by category
+            if (filterCategory !== 'all') {
+                filteredNotes = filteredNotes.filter(note => note.category === filterCategory);
+            }
+
+            // Filter by search query
+            if (searchQuery) {
+                filteredNotes = filteredNotes.filter(note => {
+                    const searchableText = [
+                        note.title,
+                        note.content,
+                        note.url || ''
+                    ].join(' ').toLowerCase();
+                    return searchableText.includes(searchQuery);
+                });
+            }
 
             const notesList = document.getElementById('notesList');
 
             if (filteredNotes.length === 0) {
+                const message = searchQuery
+                    ? `No notes found matching "${searchQuery}"`
+                    : 'No notes yet. Start adding your research!';
                 notesList.innerHTML = `
                     <div class="empty-state">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
-                        <p>No notes yet. Start adding your research!</p>
+                        <p>${message}</p>
                     </div>
                 `;
                 return;
@@ -542,6 +656,10 @@
             notesList.innerHTML = filteredNotes.map(note => {
                 const date = new Date(note.created_at);
                 const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                const urlHtml = note.url
+                    ? `<a href="${escapeHtml(note.url)}" target="_blank" rel="noopener noreferrer" class="note-url">${escapeHtml(note.url)}</a>`
+                    : '';
 
                 return `
                     <div class="note-card">
@@ -552,9 +670,11 @@
                             </div>
                         </div>
                         <div class="note-content">${escapeHtml(note.content)}</div>
+                        ${urlHtml}
                         <div class="note-meta">
                             <span>${formattedDate}</span>
                         </div>
+                        <button class="edit-btn" onclick='editNote(${JSON.stringify(note)})'>Edit</button>
                         <button class="delete-btn" onclick="deleteNote(${note.id})">Delete</button>
                     </div>
                 `;
