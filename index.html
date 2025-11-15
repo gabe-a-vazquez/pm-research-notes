@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PM Research Notes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .auth-section, .input-section {
+            padding: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .secondary-btn {
+            background: #6c757d;
+        }
+
+        .notes-section {
+            padding: 30px;
+        }
+
+        .filter-section {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter-section select {
+            width: auto;
+            min-width: 200px;
+        }
+
+        .note-card {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .note-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .note-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .note-category {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #667eea;
+            color: white;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .note-content {
+            color: #555;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+        }
+
+        .note-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .delete-btn {
+            background: #e74c3c;
+            padding: 6px 12px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .delete-btn:hover {
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .user-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .success-message {
+            background: #efe;
+            color: #3c3;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        .auth-toggle {
+            text-align: center;
+            margin-top: 15px;
+            color: #667eea;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PM Research Notes</h1>
+            <p class="subtitle">Track your company & product research</p>
+        </header>
+
+        <!-- Auth Section -->
+        <div id="authSection" class="auth-section">
+            <div id="authMessage"></div>
+
+            <div id="loginForm">
+                <h2 style="margin-bottom: 20px;">Sign In</h2>
+                <div class="form-group">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter password">
+                </div>
+                <button onclick="signIn()">Sign In</button>
+                <p class="auth-toggle" onclick="toggleAuthMode()">Don't have an account? Sign up</p>
+            </div>
+
+            <div id="signupForm" class="hidden">
+                <h2 style="margin-bottom: 20px;">Create Account</h2>
+                <div class="form-group">
+                    <label for="signupEmail">Email</label>
+                    <input type="email" id="signupEmail" placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password</label>
+                    <input type="password" id="signupPassword" placeholder="At least 6 characters">
+                </div>
+                <button onclick="signUp()">Sign Up</button>
+                <p class="auth-toggle" onclick="toggleAuthMode()">Already have an account? Sign in</p>
+            </div>
+        </div>
+
+        <!-- Main App Section (hidden until logged in) -->
+        <div id="appSection" class="hidden">
+            <div class="input-section">
+                <div class="user-info">
+                    <span>Logged in as: <strong id="userEmail"></strong></span>
+                    <button class="secondary-btn" onclick="signOut()">Sign Out</button>
+                </div>
+
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category">
+                        <option value="Company Overview">Company Overview</option>
+                        <option value="Products">Products</option>
+                        <option value="Market Position">Market Position</option>
+                        <option value="Competitors">Competitors</option>
+                        <option value="User Insights">User Insights</option>
+                        <option value="Technology">Technology</option>
+                        <option value="Business Model">Business Model</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="title">Title</label>
+                    <input type="text" id="title" placeholder="e.g., Key product features">
+                </div>
+
+                <div class="form-group">
+                    <label for="content">Notes</label>
+                    <textarea id="content" placeholder="What did you learn?"></textarea>
+                </div>
+
+                <button onclick="addNote()">Add Note</button>
+            </div>
+
+            <div class="notes-section">
+                <div class="filter-section">
+                    <select id="filterCategory" onchange="filterNotes()">
+                        <option value="all">All Categories</option>
+                        <option value="Company Overview">Company Overview</option>
+                        <option value="Products">Products</option>
+                        <option value="Market Position">Market Position</option>
+                        <option value="Competitors">Competitors</option>
+                        <option value="User Insights">User Insights</option>
+                        <option value="Technology">Technology</option>
+                        <option value="Business Model">Business Model</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div id="notesList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        // ⚠️ REPLACE THESE WITH YOUR SUPABASE PROJECT CREDENTIALS
+        const SUPABASE_URL = 'https://xuikjfwqwmbepqeqtelt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1aWtqZndxd21iZXBxZXF0ZWx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMyMzY3NzcsImV4cCI6MjA3ODgxMjc3N30.BDPPX4l9ZOQf9_rvJr0hUObyLKchyQm8hPCSYkVMRdQ';
+
+        // Initialize Supabase client
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let currentUser = null;
+        let notes = [];
+
+        // Check if user is already logged in
+        async function checkUser() {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                currentUser = user;
+                showApp();
+                await loadNotes();
+            }
+        }
+
+        function toggleAuthMode() {
+            document.getElementById('loginForm').classList.toggle('hidden');
+            document.getElementById('signupForm').classList.toggle('hidden');
+            clearAuthMessage();
+        }
+
+        function showAuthMessage(message, isError = false) {
+            const authMessage = document.getElementById('authMessage');
+            authMessage.innerHTML = `<div class="${isError ? 'error-message' : 'success-message'}">${message}</div>`;
+        }
+
+        function clearAuthMessage() {
+            document.getElementById('authMessage').innerHTML = '';
+        }
+
+        async function signUp() {
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value;
+
+            if (!email || !password) {
+                showAuthMessage('Please enter both email and password', true);
+                return;
+            }
+
+            if (password.length < 6) {
+                showAuthMessage('Password must be at least 6 characters', true);
+                return;
+            }
+
+            const { data, error } = await supabase.auth.signUp({
+                email,
+                password,
+            });
+
+            if (error) {
+                showAuthMessage(error.message, true);
+            } else {
+                showAuthMessage('Account created! Please check your email to verify your account.');
+            }
+        }
+
+        async function signIn() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+
+            if (!email || !password) {
+                showAuthMessage('Please enter both email and password', true);
+                return;
+            }
+
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+
+            if (error) {
+                showAuthMessage(error.message, true);
+            } else {
+                currentUser = data.user;
+                showApp();
+                await loadNotes();
+            }
+        }
+
+        async function signOut() {
+            await supabase.auth.signOut();
+            currentUser = null;
+            notes = [];
+            showAuth();
+        }
+
+        function showApp() {
+            document.getElementById('authSection').classList.add('hidden');
+            document.getElementById('appSection').classList.remove('hidden');
+            document.getElementById('userEmail').textContent = currentUser.email;
+        }
+
+        function showAuth() {
+            document.getElementById('authSection').classList.remove('hidden');
+            document.getElementById('appSection').classList.add('hidden');
+            clearAuthMessage();
+        }
+
+        async function loadNotes() {
+            const { data, error } = await supabase
+                .from('notes')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error loading notes:', error);
+                alert('Failed to load notes');
+            } else {
+                notes = data || [];
+                renderNotes();
+            }
+        }
+
+        async function addNote() {
+            const category = document.getElementById('category').value;
+            const title = document.getElementById('title').value.trim();
+            const content = document.getElementById('content').value.trim();
+
+            if (!title || !content) {
+                alert('Please fill in both title and notes');
+                return;
+            }
+
+            const { data, error } = await supabase
+                .from('notes')
+                .insert([
+                    {
+                        category,
+                        title,
+                        content,
+                        user_id: currentUser.id
+                    }
+                ])
+                .select();
+
+            if (error) {
+                console.error('Error adding note:', error);
+                alert('Failed to add note');
+            } else {
+                // Clear inputs
+                document.getElementById('title').value = '';
+                document.getElementById('content').value = '';
+
+                // Reload notes
+                await loadNotes();
+            }
+        }
+
+        async function deleteNote(id) {
+            if (!confirm('Delete this note?')) return;
+
+            const { error } = await supabase
+                .from('notes')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                console.error('Error deleting note:', error);
+                alert('Failed to delete note');
+            } else {
+                await loadNotes();
+            }
+        }
+
+        function filterNotes() {
+            renderNotes();
+        }
+
+        function renderNotes() {
+            const filterCategory = document.getElementById('filterCategory').value;
+            const filteredNotes = filterCategory === 'all'
+                ? notes
+                : notes.filter(note => note.category === filterCategory);
+
+            const notesList = document.getElementById('notesList');
+
+            if (filteredNotes.length === 0) {
+                notesList.innerHTML = `
+                    <div class="empty-state">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p>No notes yet. Start adding your research!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            notesList.innerHTML = filteredNotes.map(note => {
+                const date = new Date(note.created_at);
+                const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                return `
+                    <div class="note-card">
+                        <div class="note-header">
+                            <div>
+                                <div class="note-title">${escapeHtml(note.title)}</div>
+                                <span class="note-category">${note.category}</span>
+                            </div>
+                        </div>
+                        <div class="note-content">${escapeHtml(note.content)}</div>
+                        <div class="note-meta">
+                            <span>${formattedDate}</span>
+                        </div>
+                        <button class="delete-btn" onclick="deleteNote(${note.id})">Delete</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Initialize app
+        checkUser();
+    </script>
+</body>
+</html>
